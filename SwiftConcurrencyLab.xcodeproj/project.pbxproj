@@ -1,0 +1,96 @@
+// !$*UTF8*$!
+{
+ archiveVersion = 1;
+ classes = {};
+ objectVersion = 56;
+ objects = {
+
+/* Begin PBXBuildFile section */
+  A1 /* AppDelegate */ = {isa = PBXBuildFile; fileRef = A11 /* AppDelegate.swift */; };
+  A2 /* SceneDelegate */ = {isa = PBXBuildFile; fileRef = A12 /* SceneDelegate.swift */; };
+  A3 /* Inbox */ = {isa = PBXBuildFile; fileRef = A13 /* InboxViewController.swift */; };
+  A4 /* LabList */ = {isa = PBXBuildFile; fileRef = A14 /* LabListViewController.swift */; };
+  A5 /* LabDetail */ = {isa = PBXBuildFile; fileRef = A15 /* LabDetailViewController.swift */; };
+  A6 /* Log */ = {isa = PBXBuildFile; fileRef = A16 /* LogViewController.swift */; };
+  A7 /* Guide */ = {isa = PBXBuildFile; fileRef = A17 /* GuideViewController.swift */; };
+  A8 /* Models */ = {isa = PBXBuildFile; fileRef = A18 /* Models.swift */; };
+  A9 /* Support */ = {isa = PBXBuildFile; fileRef = A19 /* Support.swift */; };
+  AA /* Runners */ = {isa = PBXBuildFile; fileRef = A20 /* Runners.swift */; };
+  AB /* ConversationCell */ = {isa = PBXBuildFile; fileRef = A22 /* ConversationCell.swift */; };
+  B1 /* UITests */ = {isa = PBXBuildFile; fileRef = B11 /* SwiftConcurrencyLabUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+  B5 = {isa = PBXContainerItemProxy; containerPortal = P1; proxyType = 1; remoteGlobalIDString = T1; remoteInfo = SwiftConcurrencyLab; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+  PAPP = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftConcurrencyLab.app; sourceTree = BUILT_PRODUCTS_DIR; };
+  PTEST = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftConcurrencyLabUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+  A11 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+  A12 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+  A13 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxViewController.swift; sourceTree = "<group>"; };
+  A14 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabListViewController.swift; sourceTree = "<group>"; };
+  A15 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabDetailViewController.swift; sourceTree = "<group>"; };
+  A16 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewController.swift; sourceTree = "<group>"; };
+  A17 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuideViewController.swift; sourceTree = "<group>"; };
+  A18 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/SwiftConcurrencyCore/Models.swift; sourceTree = SOURCE_ROOT; };
+  A19 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/SwiftConcurrencyCore/Support.swift; sourceTree = SOURCE_ROOT; };
+  A20 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/SwiftConcurrencyCore/Runners.swift; sourceTree = SOURCE_ROOT; };
+  A21 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+  A22 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationCell.swift; sourceTree = "<group>"; };
+  B11 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftConcurrencyLabUITests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+  F1 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+  F2 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+  G0 = {isa = PBXGroup; children = (G1, G2, G3); sourceTree = "<group>"; };
+  G1 = {isa = PBXGroup; children = (A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21, A22); path = SwiftConcurrencyLab; sourceTree = "<group>"; };
+  G2 = {isa = PBXGroup; children = (B11); path = SwiftConcurrencyLabUITests; sourceTree = "<group>"; };
+  G3 = {isa = PBXGroup; children = (PAPP, PTEST); name = Products; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+  T1 = {isa = PBXNativeTarget; buildConfigurationList = C1; buildPhases = (S1, F1, R1); buildRules = (); dependencies = (); name = SwiftConcurrencyLab; productName = SwiftConcurrencyLab; productReference = PAPP; productType = "com.apple.product-type.application"; };
+  T2 = {isa = PBXNativeTarget; buildConfigurationList = C2; buildPhases = (S2, F2, R2); buildRules = (); dependencies = (D1); name = SwiftConcurrencyLabUITests; productName = SwiftConcurrencyLabUITests; productReference = PTEST; productType = "com.apple.product-type.bundle.ui-testing"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+  P1 = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2620; LastUpgradeCheck = 2620; TargetAttributes = {T1 = {CreatedOnToolsVersion = 26.2;}; T2 = {CreatedOnToolsVersion = 26.2; TestTargetID = T1;};};}; buildConfigurationList = CP; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = G0; productRefGroup = G3; projectDirPath = ""; projectRoot = ""; targets = (T1, T2); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+  R1 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+  R2 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+  S1 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1, A2, A3, A4, A5, A6, A7, A8, A9, AA, AB); runOnlyForDeploymentPostprocessing = 0; };
+  S2 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B1); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+  D1 = {isa = PBXTargetDependency; target = T1; targetProxy = B5; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+  CD = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; SDKROOT = iphoneos; SWIFT_VERSION = 6.0;}; name = Debug; };
+  CR = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; SDKROOT = iphoneos; SWIFT_VERSION = 6.0;}; name = Release; };
+  AD = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = ""; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = SwiftConcurrencyLab/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = io.github.estelledc.SwiftConcurrencyLab; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_STRICT_CONCURRENCY = complete; TARGETED_DEVICE_FAMILY = "1,2";}; name = Debug; };
+  AR = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = ""; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = SwiftConcurrencyLab/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = io.github.estelledc.SwiftConcurrencyLab; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_STRICT_CONCURRENCY = complete; TARGETED_DEVICE_FAMILY = "1,2";}; name = Release; };
+  TD = {isa = XCBuildConfiguration; buildSettings = {GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = io.github.estelledc.SwiftConcurrencyLabUITests; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = SwiftConcurrencyLab;}; name = Debug; };
+  TR = {isa = XCBuildConfiguration; buildSettings = {GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = io.github.estelledc.SwiftConcurrencyLabUITests; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = SwiftConcurrencyLab;}; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+  CP = {isa = XCConfigurationList; buildConfigurations = (CD, CR); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+  C1 = {isa = XCConfigurationList; buildConfigurations = (AD, AR); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+  C2 = {isa = XCConfigurationList; buildConfigurations = (TD, TR); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+ };
+ rootObject = P1;
+}
