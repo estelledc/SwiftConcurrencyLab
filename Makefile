@@ -11,6 +11,7 @@ build:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -sdk iphonesimulator -destination '$(DESTINATION)' -derivedDataPath $(DERIVED_DATA) CODE_SIGNING_ALLOWED=NO build
 
 run: build
+	xcrun simctl boot "$(SIMULATOR_NAME)" >/dev/null 2>&1 || true
 	xcrun simctl bootstatus booted -b
 	xcrun simctl install booted '$(DERIVED_DATA)/Build/Products/Debug-iphonesimulator/SwiftConcurrencyLab.app'
 	xcrun simctl launch --terminate-running-process booted $(BUNDLE_ID)

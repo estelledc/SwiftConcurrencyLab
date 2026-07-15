@@ -68,6 +68,32 @@ public enum LabScenario: String, CaseIterable, Codable, Sendable, Identifiable {
         default: ConcurrencyStrategy.allCases
         }
     }
+    public var firstMove: String {
+        switch self {
+        case .responsiveUI: "先运行 GCD，再切 Swift Concurrency；观察哪一步把 UI commit 留在主线程。"
+        case .parallelInbox: "先用 Swift Concurrency 跑一次，再切 GCD/Operation 对比任务完成顺序。"
+        case .cooperativeCancellation: "运行后立刻点 Cancel Task，看取消在哪个检查点生效。"
+        case .isolatedUnread: "分别用三种策略跑，关注最终 unread 是否由同一个隔离边界保护。"
+        case .actorReentrancy: "运行结构化版本，看 await 前后的余额检查为什么要重新设计。"
+        case .latestWinsSearch: "连续运行两次，确认旧查询晚返回时不会覆盖新结果。"
+        case .cellReuse: "运行后看 avatar commit 使用 message id，而不是 indexPath。"
+        case .boundedPrefetch: "先跑默认上限，再解释为什么不能一次启动全部预加载。"
+        case .callbackBridge: "运行桥接样本，确认 continuation 只 resume 一次。"
+        }
+    }
+    public var proofPrompt: String {
+        switch self {
+        case .responsiveUI: "Logs 中应能指出 scheduled、completed、uiCommit 的顺序。"
+        case .parallelInbox: "结果摘要应显示 3 个固定任务完成，并能说明并发不等于乱序提交。"
+        case .cooperativeCancellation: "状态文案或 Logs 应出现 cancelled，而不是假装任务瞬间消失。"
+        case .isolatedUnread: "最终 unread 值稳定，且写入路径有 actor/barrier/operation 串行证据。"
+        case .actorReentrancy: "能解释 await 后回来时，旧条件为什么不能直接相信。"
+        case .latestWinsSearch: "Logs 应显示旧 run 被丢弃或不再 UI commit。"
+        case .cellReuse: "能指出异步结果提交前重新校验了稳定身份。"
+        case .boundedPrefetch: "同时运行数量被限制，结果仍按输入顺序回收。"
+        case .callbackBridge: "await 能返回一次，且没有 double-resume 或 never-resume。"
+        }
+    }
 }
 
 public enum LabPhase: String, Codable, Sendable { case started, scheduled, suspended, completed, cancelled, uiCommit, warning }

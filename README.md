@@ -7,10 +7,29 @@
 要求：Xcode 26.2、Swift 6 language mode、iOS 17+ Simulator。
 
 ```bash
-make check
 make run
+```
+
+`make run` 会构建 App，并尝试启动默认的 `iPhone 17 Pro` 模拟器；如果本机没有这个模拟器：
+
+```bash
+make run SIMULATOR_NAME="你的 Simulator 名称"
+```
+
+日常验证再跑：
+
+```bash
+make check
 make test-ui
 ```
+
+## 5 分钟第一次实验
+
+1. 打开 App，切到 `Learn`。
+2. 进入「2. 顺序 await 与并行加载」。
+3. 先选 `Swift Concurrency`，读「先预测 / 第一次操作 / 验收证据」三段，再点 `Run Experiment`。
+4. 打开 `Logs`，找到 `scheduled -> completed -> uiCommit` 的顺序。
+5. 再切到 `GCD` 或 `Operation` 跑一次，只比较同一个问题，不同时学习所有概念。
 
 ## 学习路线
 
