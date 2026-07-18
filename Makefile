@@ -1,14 +1,24 @@
 PROJECT := SwiftConcurrencyLab.xcodeproj
 SCHEME := SwiftConcurrencyLab
 SIMULATOR_NAME ?= iPhone 17 Pro
-DESTINATION ?= platform=iOS Simulator,name=$(SIMULATOR_NAME),OS=latest
+SIMULATOR_OS ?= $(shell xcrun --sdk iphonesimulator --show-sdk-version)
+DESTINATION ?= platform=iOS Simulator,name=$(SIMULATOR_NAME),OS=$(SIMULATOR_OS)
 DERIVED_DATA := .DerivedData
 BUNDLE_ID := io.github.estelledc.SwiftConcurrencyLab
 
-.PHONY: build run test test-ui verify-showcase public-scan check release-check open clean
+.PHONY: format-check build build-ci build-release run test test-ui audit verify-showcase public-scan check release-check open clean
+
+format-check:
+	xcrun swift-format lint --strict --recursive Sources SwiftConcurrencyLab Tests SwiftConcurrencyLabUITests
 
 build:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -sdk iphonesimulator -destination '$(DESTINATION)' -derivedDataPath $(DERIVED_DATA) CODE_SIGNING_ALLOWED=NO build
+
+build-ci:
+	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath $(DERIVED_DATA) CODE_SIGNING_ALLOWED=NO build
+
+build-release:
+	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath $(DERIVED_DATA) CODE_SIGNING_ALLOWED=NO build
 
 run: build
 	xcrun simctl boot "$(SIMULATOR_NAME)" >/dev/null 2>&1 || true
@@ -22,15 +32,18 @@ test:
 test-ui:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -destination '$(DESTINATION)' -derivedDataPath $(DERIVED_DATA) CODE_SIGNING_ALLOWED=NO test
 
+audit:
+	python3 scripts/audit-project.py
+
 verify-showcase:
 	python3 scripts/audit-showcase.py
 
 public-scan:
 	./scripts/public-scan.sh
 
-check: test build verify-showcase public-scan
+check: format-check test build-ci audit verify-showcase public-scan
 
-release-check: check test-ui
+release-check: check test-ui build-release
 
 open:
 	open $(PROJECT)
