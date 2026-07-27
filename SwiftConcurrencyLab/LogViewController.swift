@@ -9,6 +9,7 @@ enum LabSession {
 final class LogViewController: UITableViewController {
   static let shared = LogViewController()
   private var events: [LabEvent] = []
+  private var resetTask: Task<Void, Never>?
   private let emptyLabel: UILabel = {
     let label = UILabel()
     label.text = "No events yet. Run an experiment first."
@@ -39,9 +40,13 @@ final class LogViewController: UITableViewController {
     updateEmptyState()
   }
   private func reset() {
-    Task { [weak self] in
+    guard resetTask == nil else { return }
+    navigationItem.rightBarButtonItem?.isEnabled = false
+    resetTask = Task { [weak self] in
       await LabSession.engine.recorder.reset()
       await self?.reload()
+      self?.resetTask = nil
+      self?.navigationItem.rightBarButtonItem?.isEnabled = true
     }
   }
   private func updateEmptyState() { tableView.backgroundView = events.isEmpty ? emptyLabel : nil }

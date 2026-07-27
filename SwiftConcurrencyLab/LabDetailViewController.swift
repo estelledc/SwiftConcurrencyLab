@@ -6,6 +6,7 @@ final class LabDetailViewController: UIViewController {
   private let engine = LabSession.engine
   private let strategyControl = UISegmentedControl()
   private let actorModeControl = UISegmentedControl()
+  private let boundedPrefetchModeControl = UISegmentedControl()
   private let statusLabel = UILabel()
   private let runButton = UIButton(configuration: .filled())
   private let cancelButton = UIButton(configuration: .bordered())
@@ -13,7 +14,11 @@ final class LabDetailViewController: UIViewController {
 
   private var strategy: ConcurrencyStrategy
   private var actorReentrancyMode: ActorReentrancyMode = .unsafe
+  private var boundedPrefetchMode: BoundedPrefetchMode = .normal
   private var runTask: Task<Void, Never>?
+  private var cancelDrainTask: Task<Void, Never>?
+  private var uiCommitLogTask: Task<Void, Never>?
+  private var resetTask: Task<Void, Never>?
   private var activeRequestID: UUID?
 
   init(scenario: LabScenario) {
@@ -124,6 +129,9 @@ final class LabDetailViewController: UIViewController {
     if scenario == .actorReentrancy {
       stack.addArrangedSubview(makeActorModeControl())
     }
+    if scenario == .boundedPrefetch {
+      stack.addArrangedSubview(makeBoundedPrefetchModeControl())
+    }
 
     runButton.configuration?.title = "Run"
     runButton.accessibilityIdentifier = "runExperimentButton"
@@ -209,12 +217,36 @@ final class LabDetailViewController: UIViewController {
     return actorModeControl
   }
 
+  private func makeBoundedPrefetchModeControl() -> UIView {
+    for (index, mode) in BoundedPrefetchMode.allCases.enumerated() {
+      boundedPrefetchModeControl.insertSegment(
+        withTitle: mode.rawValue,
+        at: index,
+        animated: false
+      )
+    }
+    boundedPrefetchModeControl.selectedSegmentIndex =
+      BoundedPrefetchMode.allCases.firstIndex(of: boundedPrefetchMode) ?? 0
+    boundedPrefetchModeControl.accessibilityIdentifier = "boundedPrefetchModeControl"
+    boundedPrefetchModeControl.addAction(
+      UIAction { [weak self] _ in
+        guard let self else { return }
+        boundedPrefetchMode =
+          BoundedPrefetchMode.allCases[boundedPrefetchModeControl.selectedSegmentIndex]
+      },
+      for: .valueChanged
+    )
+    return boundedPrefetchModeControl
+  }
+
   private func run() {
+    guard resetTask == nil else { return }
     runTask?.cancel()
 
     let requestID = UUID()
     let selectedStrategy = strategy
     let selectedActorMode = actorReentrancyMode
+    let selectedBoundedPrefetchMode = boundedPrefetchMode
     activeRequestID = requestID
     runButton.isEnabled = false
     statusLabel.text = "Running \(selectedStrategy.rawValue)…"
@@ -223,10 +255,11 @@ final class LabDetailViewController: UIViewController {
       let outcome = await engine.run(
         scenario: scenario,
         strategy: selectedStrategy,
-        actorReentrancyMode: selectedActorMode
+        actorReentrancyMode: selectedActorMode,
+        boundedPrefetchMode: selectedBoundedPrefetchMode
       )
       guard !Task.isCancelled else { return }
-      await self?.commit(
+      self?.commit(
         outcome,
         requestID: requestID,
         strategy: selectedStrategy
@@ -238,42 +271,65 @@ final class LabDetailViewController: UIViewController {
     _ outcome: LabOutcome,
     requestID: UUID,
     strategy: ConcurrencyStrategy
-  ) async {
+  ) {
     guard activeRequestID == requestID else { return }
     activeRequestID = nil
     runTask = nil
-
-    await engine.recorder.record(
-      runID: outcome.runID,
-      strategy: strategy,
-      scenario: scenario,
-      phase: .uiCommit,
-      "MainActor committed the latest run"
-    )
     statusLabel.text = compactStatus(for: outcome)
     runButton.isEnabled = true
-    await LogViewController.shared.reload()
+
+    let previousLogTask = uiCommitLogTask
+    uiCommitLogTask = Task { [engine, scenario] in
+      await previousLogTask?.value
+      await engine.recorder.record(
+        generation: outcome.recorderGeneration,
+        runID: outcome.runID,
+        strategy: strategy,
+        scenario: scenario,
+        phase: .uiCommit,
+        "MainActor committed the latest run"
+      )
+      await LogViewController.shared.reload()
+    }
   }
 
   private func cancelActiveRun() {
-    runTask?.cancel()
+    guard let taskToCancel = runTask, activeRequestID != nil else { return }
+    taskToCancel.cancel()
     runTask = nil
     activeRequestID = nil
     runButton.isEnabled = true
     statusLabel.text = "Cancellation requested · inspect Logs"
+    let previousDrainTask = cancelDrainTask
+    cancelDrainTask = Task {
+      await previousDrainTask?.value
+      await taskToCancel.value
+      await LogViewController.shared.reload()
+    }
   }
 
   private func resetExperiment() {
+    guard resetTask == nil else { return }
     let taskToCancel = runTask
+    let pendingCancelDrainTask = cancelDrainTask
+    let pendingCommitLogTask = uiCommitLogTask
     taskToCancel?.cancel()
     runTask = nil
+    cancelDrainTask = nil
+    uiCommitLogTask = nil
     activeRequestID = nil
     runButton.isEnabled = false
+    resetButton.isEnabled = false
     statusLabel.text = "Resetting…"
-    Task { [weak self, engine] in
+    resetTask = Task { [weak self, engine] in
       await taskToCancel?.value
+      await pendingCancelDrainTask?.value
+      await pendingCommitLogTask?.value
       await engine.recorder.reset()
-      guard let self, activeRequestID == nil else { return }
+      guard let self else { return }
+      resetTask = nil
+      resetButton.isEnabled = true
+      guard activeRequestID == nil else { return }
       statusLabel.text = "Ready"
       runButton.isEnabled = true
       await LogViewController.shared.reload()

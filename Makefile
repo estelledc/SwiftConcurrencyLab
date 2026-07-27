@@ -3,10 +3,10 @@ SCHEME := SwiftConcurrencyLab
 SIMULATOR_NAME ?= iPhone 17 Pro
 SIMULATOR_OS ?= $(shell xcrun --sdk iphonesimulator --show-sdk-version)
 DESTINATION ?= platform=iOS Simulator,name=$(SIMULATOR_NAME),OS=$(SIMULATOR_OS)
-DERIVED_DATA := .DerivedData
+DERIVED_DATA ?= .DerivedData
 BUNDLE_ID := io.github.estelledc.SwiftConcurrencyLab
 
-.PHONY: format-check build build-ci build-release run test test-ui audit verify-showcase public-scan check release-check open clean
+.PHONY: format-check build build-ci build-release run test test-ui test-ui-evidence audit verify-showcase public-scan check release-check open clean
 
 format-check:
 	xcrun swift-format lint --strict --recursive Sources SwiftConcurrencyLab Tests SwiftConcurrencyLabUITests
@@ -31,6 +31,9 @@ test:
 
 test-ui:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -destination '$(DESTINATION)' -derivedDataPath $(DERIVED_DATA) CODE_SIGNING_ALLOWED=NO test
+
+test-ui-evidence:
+	SIMULATOR_NAME='$(SIMULATOR_NAME)' SIMULATOR_OS='$(SIMULATOR_OS)' ./scripts/run-ui-evidence.sh
 
 audit:
 	python3 scripts/audit-project.py

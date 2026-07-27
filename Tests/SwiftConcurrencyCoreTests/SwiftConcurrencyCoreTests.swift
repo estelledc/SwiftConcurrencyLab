@@ -174,15 +174,41 @@ final class SwiftConcurrencyCoreTests: XCTestCase {
   func testRecorderResetClearsEventsAndRestartsIDs() async {
     let recorder = LabEventRecorder()
     let runID = UUID()
+    let firstGeneration = await recorder.beginRun()
     await recorder.record(
-      runID: runID, strategy: .structured, scenario: .parallelInbox, phase: .started, "before reset"
+      generation: firstGeneration, runID: runID, strategy: .structured,
+      scenario: .parallelInbox, phase: .started, "before reset"
     )
     await recorder.reset()
+    let secondGeneration = await recorder.beginRun()
     await recorder.record(
-      runID: runID, strategy: .structured, scenario: .parallelInbox, phase: .started, "after reset")
+      generation: secondGeneration, runID: runID, strategy: .structured,
+      scenario: .parallelInbox, phase: .started, "after reset")
     let events = await recorder.events()
     XCTAssertEqual(events.map(\.id), [1])
     XCTAssertEqual(events.map(\.message), ["after reset"])
+  }
+  func testRecorderResetRejectsLateEventsFromThePreviousGeneration() async {
+    let recorder = LabEventRecorder()
+    let oldRunID = UUID()
+    let oldGeneration = await recorder.beginRun()
+    await recorder.record(
+      generation: oldGeneration, runID: oldRunID, strategy: .structured,
+      scenario: .boundedPrefetch, phase: .started, "old start")
+
+    await recorder.reset()
+    let newRunID = UUID()
+    let newGeneration = await recorder.beginRun()
+    await recorder.record(
+      generation: newGeneration, runID: newRunID, strategy: .structured,
+      scenario: .boundedPrefetch, phase: .started, "new start")
+    await recorder.record(
+      generation: oldGeneration, runID: oldRunID, strategy: .structured,
+      scenario: .boundedPrefetch, phase: .cancelled, "late old terminal")
+
+    let events = await recorder.events()
+    XCTAssertEqual(events.map(\.runID), [newRunID])
+    XCTAssertEqual(events.map(\.message), ["new start"])
   }
   func testUnsupportedStrategyIsRejectedWithWarning() async {
     let engine = LabEngine()

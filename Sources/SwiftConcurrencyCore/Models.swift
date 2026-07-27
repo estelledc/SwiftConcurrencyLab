@@ -192,10 +192,12 @@ public struct LabEvent: Hashable, Codable, Sendable, Identifiable {
 
 public struct LabOutcome: Hashable, Sendable {
   public let runID: UUID
+  public let recorderGeneration: Int
   public let summary: String
   public let values: [String]
-  public init(runID: UUID, summary: String, values: [String] = []) {
+  public init(runID: UUID, recorderGeneration: Int, summary: String, values: [String] = []) {
     self.runID = runID
+    self.recorderGeneration = recorderGeneration
     self.summary = summary
     self.values = values
   }

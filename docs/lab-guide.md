@@ -360,20 +360,21 @@ Diffable Data Source 改变了 indexPath 的稳定性吗？为什么 item identi
 
 ### 定位与机制
 
-一次启动全部预加载会放大连接、内存和调度压力。`boundedMap` 先启动 `limit` 个 child Task，每完成一个才补一个；结果附带输入 index，最后排序恢复输入顺序。
+一次启动全部预加载会放大连接、内存和调度压力。`boundedMap` 先启动 `limit` 个 child Task，每完成一个才补一个；结果附带输入 index，最后排序恢复输入顺序。可选 monitor 只在 TaskGroup 完全 drain 后记录 success、typed failure 或 parent cancellation terminal，避免把“已请求取消”误写成“已结束”。
 
 ### 真实代码定位
 
 - Source：`Sources/SwiftConcurrencyCore/Runners.swift`
 - 主锚点：`case .boundedPrefetch:`
-- 关联符号：`boundedMap(_:limit:operation:)`
+- 关联符号：`boundedMap(_:limit:monitor:operation:)`、`BoundedMapMonitor`
 - 调度点：`group.addTask` 与 `while let result = try await group.next()`
 
 ### App 操作
 
 1. Learn →「8. 受限并发预加载」。
-2. 点 Run；样本输入是 12 个 preview、并发上限 4。
+2. 保持 `Normal` 后点 Run；样本输入是 12 个 preview、并发上限 4。
 3. App 显示 `12 values in Logs`，Logs 中应有 `limit=4` 的 scheduled 事件。
+4. 切到 `Cancellation Probe`，点 Run 后立即点 Cancel；Logs 必须只有一个 `cancelled` terminal，不能出现 `completed` 或 `uiCommit`。
 
 ### Xcode / LLDB 操作
 
@@ -384,24 +385,27 @@ Diffable Data Source 改变了 indexPath 的稳定性吗？为什么 item identi
 
 ### 预期真实证据
 
-- Core 测试中的 probe 观测最大并发恰好为 3（测试输入 limit=3），且结果保持输入顺序。
+- Core 原有 probe 观测最大并发恰好为 3（测试输入 limit=3），且结果保持输入顺序。
+- 新增 100 轮确定性矩阵逐轮覆盖 success、child failure 和 parent cancellation；每轮要求 terminal count=1、activeAtTerminal=0、lateCompletionCount=0，并核对 peakActive 不越过 limit。额外负控验证 operation 忽略取消后返回时仍不能提交 success、typed child error 不会被同时到达的父取消改写，monitor 也拒绝跨 run 复用。
 - App 样本固定调度 12 项并宣告 limit=4。
 - 结果数量为 12，且不会因为完成顺序变化而乱序提交。
 
 ### Cancel / Reset / 复验
 
-- Run 后立即 Cancel，确认 child TaskGroup 接收父任务取消；具体退出点仍取决于 operation 是否检查取消。
-- `Logs → Reset` 后正常跑一次作为对照。
+- `Cancellation Probe` 把 4 个 child 固定挂在可取消的 `Task.sleep`；Cancel 后等待整棵任务树 drain，再记录唯一 `cancelled` terminal。
+- 实验页 Reset 会等待当前 cancel drain / commit log 后推进 recorder generation；Logs Reset 也推进 generation。旧 run 即使晚到也不能让已清空的日志重新出现，随后再正常跑一次作为对照。
 - 分别以 limit 1、4、12 在隔离修改中录制 trace；恢复 4 后运行 Core tests。
 
 ### 误区与边界
 
 - 误区：并发上限应该等于 CPU 核数。正确理解：限制取决于任务性质、服务限流、内存与延迟目标。
+- 误区：`cancel()` 返回就代表所有 child 都结束。正确理解：这里只把 TaskGroup scope 返回后的 `activeAtTerminal=0` 记为已完成传播。
 - 边界：这个实现会等待全部结果后返回，不是流式消费；大数据集可能需要 `AsyncSequence` 或增量提交。
+- 边界：故障注入是单进程本地 Task，不等价于真实网络连接、服务器限流、SLA 或能耗结果。
 
 ### 思考题
 
-当某一个 child Task 失败时，当前 throwing TaskGroup 会怎样处理其余任务？产品需要“全失败”还是“部分成功”？
+当某一个 child Task 失败时，为什么 terminal 必须等其余 child drain 后再记录？产品需要“全失败”还是“部分成功”？
 
 <!-- lab-card:callbackBridge -->
 <a id="lab-callback-bridge"></a>

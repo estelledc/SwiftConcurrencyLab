@@ -14,22 +14,30 @@ scheme = (
 )
 guide = root / "docs/lab-guide.md"
 models_path = root / "Sources/SwiftConcurrencyCore/Models.swift"
+support_path = root / "Sources/SwiftConcurrencyCore/Support.swift"
 detail_path = root / "SwiftConcurrencyLab/LabDetailViewController.swift"
+log_path = root / "SwiftConcurrencyLab/LogViewController.swift"
 list_path = root / "SwiftConcurrencyLab/LabListViewController.swift"
 info_path = root / "SwiftConcurrencyLab/Info.plist"
 makefile_path = root / "Makefile"
 ui_tests_path = root / "SwiftConcurrencyLabUITests/SwiftConcurrencyLabUITests.swift"
+ui_evidence_path = root / "scripts/run-ui-evidence.sh"
+ui_receipt_path = root / "scripts/write-ui-receipt.py"
 
 required_files = [
     project,
     scheme,
     guide,
     models_path,
+    support_path,
     detail_path,
+    log_path,
     list_path,
     info_path,
     makefile_path,
     ui_tests_path,
+    ui_evidence_path,
+    ui_receipt_path,
 ]
 missing = [str(path.relative_to(root)) for path in required_files if not path.is_file()]
 if missing:
@@ -39,10 +47,14 @@ project_text = project.read_text(encoding="utf-8")
 scheme_text = scheme.read_text(encoding="utf-8")
 guide_text = guide.read_text(encoding="utf-8")
 models = models_path.read_text(encoding="utf-8")
+support = support_path.read_text(encoding="utf-8")
 detail = detail_path.read_text(encoding="utf-8")
+log_view = log_path.read_text(encoding="utf-8")
 lab_list = list_path.read_text(encoding="utf-8")
 makefile = makefile_path.read_text(encoding="utf-8")
 ui_tests = ui_tests_path.read_text(encoding="utf-8")
+ui_evidence = ui_evidence_path.read_text(encoding="utf-8")
+ui_receipt = ui_receipt_path.read_text(encoding="utf-8")
 
 required_project_settings = [
     'DEBUG_INFORMATION_FORMAT = dwarf;',
@@ -87,6 +99,7 @@ required_make_targets = [
     "build-ci:",
     "build-release:",
     "test-ui:",
+    "test-ui-evidence:",
     "audit:",
     "release-check:",
 ]
@@ -96,6 +109,30 @@ if missing_make_targets:
 if "simctl shutdown all" in makefile:
     raise SystemExit("UI tests must not shut down simulators owned by other labs")
 
+required_ui_evidence_markers = [
+    "simctl create",
+    "simctl delete",
+    "simctl list --json",
+    'payload.get("devicetypes"',
+    "mktemp -d",
+    "-derivedDataPath",
+    "-resultBundlePath",
+    "-only-testing:SwiftConcurrencyLabUITests",
+    "xcresulttool get test-results summary",
+    "write-ui-receipt.py",
+]
+missing_ui_evidence_markers = [
+    marker for marker in required_ui_evidence_markers if marker not in ui_evidence
+]
+if missing_ui_evidence_markers:
+    raise SystemExit(
+        "hermetic UI evidence runner missing: "
+        + ", ".join(missing_ui_evidence_markers)
+    )
+for marker in ["schemaVersion", "totalTestCount", "failedTests", "resultBundle"]:
+    if marker not in ui_receipt:
+        raise SystemExit(f"portable UI receipt missing: {marker}")
+
 required_ui_contracts = [
     "windowFrame.width",
     "windowFrame.height",
@@ -103,9 +140,13 @@ required_ui_contracts = [
     '"labDocsCue"',
     "The lab list should show titles only.",
     '"actorReentrancyModeControl"',
+    '"boundedPrefetchModeControl"',
     '"resetExperimentButton"',
     "accepted=2",
     "rejected=message-old",
+    "Swift Concurrency · cancelled",
+    "testCancelThenResetDoesNotAllowTheOldTerminalToReappear",
+    "testLogsResetRejectsAPendingOldUICommit",
 ]
 missing_ui_contracts = [
     marker for marker in required_ui_contracts if marker not in ui_tests
@@ -114,6 +155,13 @@ if missing_ui_contracts:
     raise SystemExit(
         "UI regression coverage missing: " + ", ".join(missing_ui_contracts)
     )
+
+for marker in ["guard eventGeneration == generation", "generation += 1"]:
+    if marker not in support:
+        raise SystemExit(f"recorder generation boundary missing: {marker}")
+for marker in ["guard resetTask == nil", "rightBarButtonItem?.isEnabled = false"]:
+    if marker not in log_view:
+        raise SystemExit(f"Logs reset serialization missing: {marker}")
 
 for verbose_marker in ["firstMove", "proofPrompt", "strategy.summary"]:
     if verbose_marker in detail:
@@ -129,6 +177,13 @@ required_console_markers = [
     "scenario.documentationPath",
     "compactStatus(for: outcome)",
     "await taskToCancel?.value",
+    "await pendingCommitLogTask?.value",
+    "await pendingCancelDrainTask?.value",
+    "guard let taskToCancel = runTask",
+    "uiCommitLogTask = Task",
+    "guard resetTask == nil",
+    "resetButton.isEnabled = false",
+    "boundedPrefetchMode: selectedBoundedPrefetchMode",
     "await engine.recorder.reset()",
 ]
 missing_console_markers = [

@@ -54,8 +54,10 @@ Core 同时是 Swift Package；`make test` 运行其确定性测试。App 直接
 ## 证据与边界
 
 - 正式路径开启 Swift 6 严格并发检查；故意 data race 只允许在单独的 TSan 诊断流程中复现，不能作为默认测试或发布代码。
-- 每个非结构化 UIKit `Task` 都由 ViewController 持有，并在重新运行或释放时取消。
-- 所有实验共用一个事件记录器；重新运行会让旧 Task 失去 UI commit 资格，只有当前 request 能在 `@MainActor` 更新界面。
+- 每个实验 run Task 及其 cancel drain、commit log、Reset 都由 ViewController 持有；短日志刷新不承载业务结果。
+- 所有实验共用一个带 generation 的事件记录器；重新运行会让旧 Task 失去 UI commit 资格，Reset 后的旧 generation 也不能补写事件，只有当前 request 能在 `@MainActor` 更新界面。
+- Core 可靠性 harness 为每次受限预取创建 one-shot monitor，记录 success / typed failure / parent cancellation 三种 terminal；100 轮可控交错矩阵要求 terminal 只出现一次、child 全部 drain、terminal 时 active=0 且无 late completion。
+- [受限预取并发可靠性面试证据卡](docs/bounded-prefetch-reliability-interview-evidence.md) 记录本轮 JD 缺口、失败链、当前 26 Core / 8 UI 门禁、可复验入口与不能外推的边界。
 - `Info.plist` 使用现代 `UILaunchScreen` 声明，防止新设备退回 320×480 compatibility viewport；UI 测试会检查窗口宽高，避免黑色上下 letterbox 回归。
 - Main Thread Checker、Thread Sanitizer、Swift Concurrency Instruments 和 Time Profiler 的观察步骤在实验说明中记录；性能结论需要 trace 对比。
 - 仅使用本地虚构数据与公开 API；不接入真实服务、不包含凭证或内部资料。
@@ -74,6 +76,7 @@ make test              # Swift Package tests
 make format-check      # Swift formatting gate
 make build             # iOS Simulator build
 make test-ui           # XCUITest
+make test-ui-evidence  # 独立 Simulator / DerivedData / xcresult / JSON receipt
 make build-release     # Release + dSYM settings build
 make verify-showcase   # public page contract
 make public-scan       # privacy boundary

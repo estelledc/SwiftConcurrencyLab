@@ -143,4 +143,133 @@ final class SwiftConcurrencyLabUITests: XCTestCase {
       ).firstMatch.waitForExistence(timeout: 5)
     )
   }
+
+  func testBoundedPrefetchCancellationHasOneTerminalAndNoLateUICommit() throws {
+    let app = XCUIApplication()
+    app.launch()
+    openLab("lab_boundedPrefetch", in: app)
+
+    let mode = app.segmentedControls["boundedPrefetchModeControl"]
+    XCTAssertTrue(mode.waitForExistence(timeout: 5))
+    mode.buttons["Cancellation Probe"].tap()
+    app.buttons["runExperimentButton"].tap()
+    app.buttons["cancelExperimentButton"].tap()
+
+    XCTAssertTrue(
+      app.staticTexts.containing(
+        NSPredicate(format: "label CONTAINS 'Cancellation requested'")
+      ).firstMatch.waitForExistence(timeout: 5)
+    )
+
+    app.navigationBars.buttons["Logs"].tap()
+    XCTAssertTrue(app.tables["labLogTable"].waitForExistence(timeout: 5))
+    let cancelledEvents = app.staticTexts.containing(
+      NSPredicate(format: "label CONTAINS 'Swift Concurrency · cancelled'")
+    )
+    XCTAssertTrue(cancelledEvents.firstMatch.waitForExistence(timeout: 5))
+    XCTAssertEqual(cancelledEvents.count, 1)
+    XCTAssertEqual(
+      app.staticTexts.containing(
+        NSPredicate(format: "label CONTAINS 'Swift Concurrency · completed'")
+      ).count,
+      0
+    )
+    XCTAssertEqual(
+      app.staticTexts.containing(
+        NSPredicate(format: "label CONTAINS 'Swift Concurrency · uiCommit'")
+      ).count,
+      0
+    )
+
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+    XCTAssertTrue(app.buttons["runExperimentButton"].isEnabled)
+  }
+
+  func testCompletedRunCannotBeRelabeledAsCancellation() throws {
+    let app = XCUIApplication()
+    app.launch()
+    openLab("lab_boundedPrefetch", in: app)
+
+    app.buttons["runExperimentButton"].tap()
+    let completedStatus = app.staticTexts.containing(
+      NSPredicate(
+        format: "label CONTAINS 'TaskGroup 最多同时运行 4 个任务' AND label CONTAINS '12 values'"
+      )
+    ).firstMatch
+    XCTAssertTrue(completedStatus.waitForExistence(timeout: 5))
+
+    app.buttons["cancelExperimentButton"].tap()
+    XCTAssertTrue(completedStatus.exists)
+    XCTAssertFalse(
+      app.staticTexts.containing(
+        NSPredicate(format: "label CONTAINS 'Cancellation requested'")
+      ).firstMatch.exists
+    )
+
+    app.navigationBars.buttons["Logs"].tap()
+    XCTAssertTrue(app.tables["labLogTable"].waitForExistence(timeout: 5))
+    XCTAssertTrue(
+      app.staticTexts.containing(
+        NSPredicate(format: "label CONTAINS 'Swift Concurrency · uiCommit'")
+      ).firstMatch.waitForExistence(timeout: 5)
+    )
+    XCTAssertEqual(
+      app.staticTexts.containing(
+        NSPredicate(format: "label CONTAINS 'Swift Concurrency · cancelled'")
+      ).count,
+      0
+    )
+  }
+
+  func testCancelThenResetDoesNotAllowTheOldTerminalToReappear() throws {
+    let app = XCUIApplication()
+    app.launch()
+    openLab("lab_boundedPrefetch", in: app)
+
+    let mode = app.segmentedControls["boundedPrefetchModeControl"]
+    mode.buttons["Cancellation Probe"].tap()
+    app.buttons["runExperimentButton"].tap()
+    app.buttons["cancelExperimentButton"].tap()
+    app.buttons["resetExperimentButton"].tap()
+
+    XCTAssertTrue(app.staticTexts["Ready"].waitForExistence(timeout: 5))
+    app.navigationBars.buttons["Logs"].tap()
+    let empty = app.staticTexts["No events yet. Run an experiment first."]
+    XCTAssertTrue(empty.waitForExistence(timeout: 5))
+    sleep(1)
+    XCTAssertTrue(empty.exists)
+    XCTAssertEqual(
+      app.staticTexts.containing(
+        NSPredicate(format: "label CONTAINS 'Swift Concurrency · cancelled'")
+      ).count,
+      0
+    )
+  }
+
+  func testLogsResetRejectsAPendingOldUICommit() throws {
+    let app = XCUIApplication()
+    app.launch()
+    openLab("lab_boundedPrefetch", in: app)
+
+    app.buttons["runExperimentButton"].tap()
+    XCTAssertTrue(
+      app.staticTexts.containing(
+        NSPredicate(format: "label CONTAINS 'TaskGroup 最多同时运行 4 个任务'")
+      ).firstMatch.waitForExistence(timeout: 5)
+    )
+    app.navigationBars.buttons["Logs"].tap()
+    XCTAssertTrue(app.tables["labLogTable"].waitForExistence(timeout: 5))
+    app.navigationBars.buttons["Reset"].tap()
+
+    let empty = app.staticTexts["No events yet. Run an experiment first."]
+    XCTAssertTrue(empty.waitForExistence(timeout: 5))
+    sleep(1)
+    XCTAssertTrue(empty.exists)
+    XCTAssertEqual(
+      app.staticTexts.containing(
+        NSPredicate(format: "label CONTAINS 'Swift Concurrency · uiCommit'")
+      ).count,
+      0
+    )
+  }
 }

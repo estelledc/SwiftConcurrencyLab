@@ -1,4 +1,5 @@
 .build/
 .DerivedData/
+.artifacts/
 *.xcresult
 .DS_Store

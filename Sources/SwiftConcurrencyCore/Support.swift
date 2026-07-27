@@ -1,13 +1,17 @@
 import Foundation
 
 public actor LabEventRecorder {
+  private var generation = 0
   private var nextID = 1
   private var stored: [LabEvent] = []
   public init() {}
+  public func beginRun() -> Int { generation }
   public func record(
+    generation eventGeneration: Int,
     runID: UUID, strategy: ConcurrencyStrategy, scenario: LabScenario, phase: LabPhase,
     _ message: String
   ) {
+    guard eventGeneration == generation else { return }
     stored.append(
       LabEvent(
         id: nextID, runID: runID, strategy: strategy, scenario: scenario, phase: phase,
@@ -16,6 +20,7 @@ public actor LabEventRecorder {
   }
   public func events() -> [LabEvent] { stored }
   public func reset() {
+    generation += 1
     nextID = 1
     stored.removeAll()
   }
